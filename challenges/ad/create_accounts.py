@@ -10,9 +10,9 @@ import string
 from pyad import *
 
 AD_ADMINISTRATOR=os.environ.get('AD_ADMINISTRATOR','Administrator')
-AD_ADMINISTRATOR_PASS=os.environ.get('AD_ADMINISTRATOR_PASS', 'from the lab')
+AD_ADMINISTRATOR_PASS=os.environ.get('AD_ADMINISTRATOR_PASS', 'lab_password')
 
-p = pyad.set_defaults(ldap_server='', username=AD_ADMINISTRATOR, password=AD_ADMINISTRATOR_PASS)
+p = pyad.set_defaults(ldap_server='hackrange.net', username=AD_ADMINISTRATOR, password=AD_ADMINISTRATOR_PASS)
 
 unique_names = {}
 sam_length = 7
@@ -29,14 +29,15 @@ def gen_random_password(words_file_path):
     return '-'.join(random_words) + str(random.randrange(1,8))
 
 def create_user_in_ad(data):
-    ou = pyad.adcontainer.ADContainer.from_dn("ou=All_Users, dc=hackerrank, dc=net")
-    new_user = pyad.aduser.ADUser.create(data['FirstName'],
+    ou = pyad.adcontainer.ADContainer.from_dn("ou=hackers, dc=hackrange, dc=net")
+    new_user = pyad.aduser.ADUser.create(data['FullName'],
         ou,
-        data['Password'],
+        password=data['Password'],
         optional_attributes={
             "displayName": data['FullName'],
-            "sam": data['sam'],
-            "sn": data['LastName']
+            "sAMAccountName": data['sam'],
+            "sn": data['LastName'],
+            "mail": data['FirstName'] + '.' + data['LastName'] + '@hackrange.net'
         }
     
     )
@@ -56,4 +57,5 @@ with open('created_users.csv', 'w') as output:
             'Password': gen_random_password(words_path)
         }
         print(sam, unique_names[sam])
+        create_user_in_ad(unique_names[sam])
         w.writerow(unique_names[sam])
